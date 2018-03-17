@@ -6,16 +6,36 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	//"log"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 
 	httpfstypes "github.com/prologic/httpfs/types"
 
 	"bazil.org/fuse"
 )
+
+func prepareTimeString(ts string) string {
+	return strings.Trim(strings.Join(strings.SplitN(
+		strings.Trim(ts, "\t "), " ", 3)[0:2], " "), "\r\n\t ")
+}
+
+// ParseTime ...
+func ParseTime(n *html.Node) (t time.Time) {
+	if ts := prepareTimeString(n.Data); ts != "" {
+		var err error
+		t, err = time.Parse("2-Jan-2006 15:04", ts)
+		if err != nil {
+			log.Printf("ParseTime('%s'): %s", ts, err)
+		}
+	}
+	return
+}
 
 // ErrorFromStatus ...
 func ErrorFromStatus(code int) fuse.Errno {
@@ -166,11 +186,44 @@ func (c Client) Readdir(path string) ([]os.FileInfo, error) {
 		return nil, ErrorFromStatus(r.StatusCode)
 	}
 
-	data, _ := ioutil.ReadAll(r.Body)
-
-	if err := json.Unmarshal(data, &entries); nil != err {
-		//log.Printf("Error: %s\n", err)
-		return nil, err
+	switch strings.SplitN(r.Header.Get("Content-Type"), ";", 2)[0] {
+	case "text/html":
+		doc, err := html.Parse(r.Body)
+		if err != nil {
+			return nil, err
+		}
+		var walk func(*html.Node)
+		walk = func(n *html.Node) {
+			if n.Type == html.ElementNode && n.Data == "a" {
+				for _, a := range n.Attr {
+					if a.Key == "href" {
+						name, err := url.QueryUnescape(a.Val)
+						if err != nil {
+							log.Printf("url.QueryUnescape(%s): %s", a.Val, err)
+						}
+						name = strings.TrimRight(name, "/")
+						entries = append(entries, httpfstypes.Entry{
+							Name:    name,
+							IsDir:   a.Val[len(a.Val)-1] == '/',
+							ModTime: 0, // ParseTime(n.NextSibling).Unix(),
+						})
+						break
+					}
+				}
+			}
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				walk(c)
+			}
+		}
+		walk(doc)
+	case "application/json":
+		data, _ := ioutil.ReadAll(r.Body)
+		if err := json.Unmarshal(data, &entries); nil != err {
+			//log.Printf("Error: %s\n", err)
+			return nil, err
+		}
+	default:
+		panic("Unsupported directory response.")
 	}
 
 	for _, entry := range entries {
