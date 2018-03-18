@@ -56,7 +56,7 @@ func main() {
 	flag.Parse()
 
 	if version {
-		fmt.Printf("httpfsd v%s", httpfs.FullVersion())
+		fmt.Printf(httpfs.FullVersion())
 		os.Exit(0)
 	}
 
