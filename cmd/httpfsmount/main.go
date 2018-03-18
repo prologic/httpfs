@@ -9,35 +9,44 @@ import (
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
 
+	"github.com/prologic/httpfs"
 	"github.com/prologic/httpfs/fsapi"
 )
-
-// debug flag enables logging of debug messages to stderr.
-var debug = flag.Bool("debug", false, "enable debug log messages to stderr")
-var url = flag.String("url", "", "url of httpsfs backend (required)")
-var tlsverify = flag.Bool("tlsverify", false, "enable TLS verification")
-var mount = flag.String("mount", "", "path to mount volume (required)")
-
-func usage() {
-	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-	flag.PrintDefaults()
-}
 
 func debugLog(msg interface{}) {
 	fmt.Printf("%s\n", msg)
 }
 
 func main() {
-	flag.Usage = usage
+	var (
+		version   bool
+		debug     bool
+		url       string
+		tlsverify bool
+		mount     string
+	)
+
+	flag.BoolVar(&version, "v", false, "display version information")
+
+	flag.BoolVar(&debug, "debug", false, "enable debug log messages to stderr")
+	flag.StringVar(&url, "url", "", "url of httpsfs backend (required)")
+	flag.BoolVar(&tlsverify, "tlsverify", false, "enable TLS verification")
+	flag.StringVar(&mount, "mount", "", "path to mount volume (required)")
+
 	flag.Parse()
 
-	if *mount == "" || *url == "" {
-		usage()
+	if version {
+		fmt.Printf("httpfsd v%s", httpfs.FullVersion())
+		os.Exit(0)
+	}
+
+	if mount == "" || url == "" {
+		fmt.Println("Both -mount and -url are required")
 		os.Exit(2)
 	}
 
 	c, err := fuse.Mount(
-		*mount,
+		mount,
 		fuse.FSName("httpfs"),
 		fuse.Subtype("httpfs"),
 		fuse.VolumeName("HTTP FS"),
@@ -54,11 +63,11 @@ func main() {
 	defer c.Close()
 
 	cfg := &fs.Config{}
-	if *debug {
+	if debug {
 		cfg.Debug = debugLog
 	}
 	srv := fs.New(c, cfg)
-	filesys := fsapi.NewHTTPFS(*url, *tlsverify)
+	filesys := fsapi.NewHTTPFS(url, tlsverify)
 
 	if err := srv.Serve(filesys); err != nil {
 		log.Fatal(err)

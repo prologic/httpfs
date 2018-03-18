@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/namsral/flag"
 
+	"github.com/prologic/httpfs"
 	"github.com/prologic/httpfs/webapi"
 )
 
@@ -29,6 +31,7 @@ func Log(handler http.Handler) http.Handler {
 
 func main() {
 	var (
+		version  bool
 		config   string
 		tls      bool
 		tlscert  string
@@ -39,6 +42,8 @@ func main() {
 		root     string
 	)
 
+	flag.BoolVar(&version, "v", false, "display version information")
+
 	flag.StringVar(&config, "config", "", "config file")
 	flag.BoolVar(&tls, "tls", false, "Use TLS")
 	flag.BoolVar(&debug, "debug", false, "set debug logging")
@@ -47,7 +52,13 @@ func main() {
 	flag.StringVar(&tlskey, "tlskey", "server.key", "server key")
 	flag.StringVar(&bind, "bind", "0.0.0.0:8000", "[int]:<port> to bind to")
 	flag.StringVar(&root, "root", cwd(), "path to serve")
+
 	flag.Parse()
+
+	if version {
+		fmt.Printf("httpfsd v%s", httpfs.FullVersion())
+		os.Exit(0)
+	}
 
 	if !debug {
 		log.SetOutput(ioutil.Discard)

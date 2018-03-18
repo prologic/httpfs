@@ -1,0 +1,43 @@
+builds:
+  - 
+    main: ./cmd/httpfsd/main.go
+    binary: httpfsd
+    flags: -tags "static_build"
+    ldflags: -w -X main.Version={{.Version}} -X main.Commit={{.Commit}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - freebsd
+      - linux
+      - windows
+    goarch:
+      - i386
+      - amd64
+      - arm
+      - amd64
+    goarm:
+      - 6
+      - 7
+  - 
+    main: ./cmd/httpfsmount/main.go
+    binary: httpfsmount
+    flags: -tags "static_build"
+    ldflags: -w -X main.Version={{.Version}} -X main.Commit={{.Commit}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - freebsd
+      - linux
+      - windows
+    goarch:
+      - i386
+      - amd64
+      - arm
+      - amd64
+    goarm:
+      - 6
+      - 7
+sign:
+  artifacts: checksum
