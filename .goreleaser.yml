@@ -10,7 +10,6 @@ builds:
       - darwin
       - freebsd
       - linux
-      - windows
     goarch:
       - i386
       - amd64
@@ -30,7 +29,6 @@ builds:
       - darwin
       - freebsd
       - linux
-      - windows
     goarch:
       - i386
       - amd64
