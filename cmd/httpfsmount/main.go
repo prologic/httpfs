@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
+	"path"
+
+	log "github.com/sirupsen/logrus"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -13,44 +15,53 @@ import (
 	"github.com/prologic/httpfs/fsapi"
 )
 
-func debugLog(msg interface{}) {
-	fmt.Printf("%s\n", msg)
-}
+var (
+	version   bool
+	debug     bool
+	url       string
+	tlsverify bool
+	mount     string
+)
 
-func main() {
-	var (
-		version   bool
-		debug     bool
-		url       string
-		tlsverify bool
-		mount     string
-	)
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] <mount>\n", path.Base(os.Args[0]))
+		flag.PrintDefaults()
+	}
 
 	flag.BoolVar(&version, "v", false, "display version information")
 
-	flag.BoolVar(&debug, "debug", false, "enable debug log messages to stderr")
-	flag.StringVar(&url, "url", "", "url of httpsfs backend (required)")
+	flag.BoolVar(&debug, "d", false, "enable debug log messages to stderr")
+	flag.StringVar(&url, "u", "http://localhost:8000/", "url of httpsfs backend")
 	flag.BoolVar(&tlsverify, "tlsverify", false, "enable TLS verification")
-	flag.StringVar(&mount, "mount", "", "path to mount volume (required)")
+}
 
+func main() {
 	flag.Parse()
+
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 
 	if version {
 		fmt.Printf(httpfs.FullVersion())
 		os.Exit(0)
 	}
 
-	if mount == "" || url == "" {
-		fmt.Println("Both -mount and -url are required")
-		os.Exit(2)
+	if flag.NArg() < 1 {
+		flag.Usage()
+		os.Exit(1)
 	}
+
+	mount = flag.Arg(0)
 
 	c, err := fuse.Mount(
 		mount,
 		fuse.FSName("httpfs"),
 		fuse.Subtype("httpfs"),
 		fuse.VolumeName("HTTP FS"),
-		// fuse.LocalVolume(),
 		fuse.AllowOther(),
 
 		fuse.MaxReadahead(2^20),
@@ -58,24 +69,24 @@ func main() {
 		fuse.NoAppleXattr(),
 	)
 	if err != nil {
+		log.Errorf("#1")
 		log.Fatal(err)
 	}
 	defer c.Close()
 
 	cfg := &fs.Config{}
-	if debug {
-		cfg.Debug = debugLog
-	}
 	srv := fs.New(c, cfg)
 	filesys := fsapi.NewHTTPFS(url, tlsverify)
 
 	if err := srv.Serve(filesys); err != nil {
+		log.Errorf("#1")
 		log.Fatal(err)
 	}
 
 	// Check if the mount process has an error to report.
 	<-c.Ready
 	if err := c.MountError; err != nil {
+		log.Errorf("#1")
 		log.Fatal(err)
 	}
 }
