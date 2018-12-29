@@ -11,23 +11,8 @@ import (
 
 	"github.com/prologic/httpfs"
 	"github.com/prologic/httpfs/webapi"
+	"github.com/unrolled/logger"
 )
-
-func cwd() string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	return cwd
-}
-
-// Log logs all HTTP requests
-func Log(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Infof("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-		handler.ServeHTTP(w, r)
-	})
-}
 
 var (
 	version  bool
@@ -84,11 +69,10 @@ func main() {
 
 	var handler http.Handler
 
-	if debug {
-		handler = Log(http.DefaultServeMux)
-	} else {
-		handler = http.DefaultServeMux
-	}
+	handler = logger.New(logger.Options{
+		Prefix:               "httpfsd",
+		RemoteAddressHeaders: []string{"X-Forwarded-For"},
+	}).Handler(http.DefaultServeMux)
 
 	if tls {
 		log.Fatal(
