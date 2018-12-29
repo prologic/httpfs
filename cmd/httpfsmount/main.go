@@ -32,7 +32,7 @@ func init() {
 	flag.BoolVar(&version, "v", false, "display version information")
 
 	flag.BoolVar(&debug, "d", false, "enable debug log messages to stderr")
-	flag.StringVar(&url, "u", "http://localhost:8000/", "url of httpsfs backend")
+	flag.StringVar(&url, "u", "http://localhost:8000", "url of httpsfs backend")
 	flag.BoolVar(&tlsverify, "tlsverify", false, "enable TLS verification")
 }
 
