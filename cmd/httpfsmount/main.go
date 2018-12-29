@@ -41,6 +41,9 @@ func main() {
 
 	if debug {
 		log.SetLevel(log.DebugLevel)
+		fuse.Debug = func(msg interface{}) {
+			log.Debugf("%s\n", msg)
+		}
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}

@@ -1,13 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
+	"path"
 
-	"github.com/namsral/flag"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/prologic/httpfs"
 	"github.com/prologic/httpfs/webapi"
@@ -21,48 +21,64 @@ func cwd() string {
 	return cwd
 }
 
-// Log ...
+// Log logs all HTTP requests
 func Log(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		log.Infof("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 		handler.ServeHTTP(w, r)
 	})
 }
 
-func main() {
-	var (
-		version  bool
-		config   string
-		tls      bool
-		tlscert  string
-		tlskey   string
-		readonly bool
-		debug    bool
-		bind     string
-		root     string
-	)
+var (
+	version  bool
+	tls      bool
+	tlscert  string
+	tlskey   string
+	readonly bool
+	debug    bool
+	bind     string
+	root     string
+)
+
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] <root>\n", path.Base(os.Args[0]))
+		flag.PrintDefaults()
+	}
 
 	flag.BoolVar(&version, "v", false, "display version information")
+	flag.BoolVar(&debug, "d", false, "set debug logging")
 
-	flag.StringVar(&config, "config", "", "config file")
+	flag.StringVar(&bind, "b", "0.0.0.0:8000", "[int]:<port> to bind to")
+	flag.BoolVar(&readonly, "r", false, "set read-only mode")
+
 	flag.BoolVar(&tls, "tls", false, "Use TLS")
-	flag.BoolVar(&debug, "debug", false, "set debug logging")
-	flag.BoolVar(&readonly, "readonly", false, "set read-only mode")
 	flag.StringVar(&tlscert, "tlscert", "server.crt", "server certificate")
 	flag.StringVar(&tlskey, "tlskey", "server.key", "server key")
-	flag.StringVar(&bind, "bind", "0.0.0.0:8000", "[int]:<port> to bind to")
-	flag.StringVar(&root, "root", cwd(), "path to serve")
+}
 
+func main() {
 	flag.Parse()
+
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 
 	if version {
 		fmt.Printf(httpfs.FullVersion())
 		os.Exit(0)
 	}
 
-	if !debug {
-		log.SetOutput(ioutil.Discard)
+	if flag.NArg() < 1 {
+		flag.Usage()
+		os.Exit(1)
 	}
+
+	root = flag.Arg(0)
+
+	os.MkdirAll(root, 0700)
 
 	http.Handle("/", webapi.FileServer(root, readonly))
 
