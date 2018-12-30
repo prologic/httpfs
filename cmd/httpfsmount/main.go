@@ -23,7 +23,7 @@ var (
 	mount     string
 )
 
-func init() {
+func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] <mount>\n", path.Base(os.Args[0]))
 		flag.PrintDefaults()
@@ -34,9 +34,7 @@ func init() {
 	flag.BoolVar(&debug, "d", false, "enable debug log messages to stderr")
 	flag.StringVar(&url, "u", "http://localhost:8000", "url of httpsfs backend")
 	flag.BoolVar(&tlsverify, "tlsverify", false, "enable TLS verification")
-}
 
-func main() {
 	flag.Parse()
 
 	if debug {

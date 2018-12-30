@@ -25,7 +25,7 @@ var (
 	root     string
 )
 
-func init() {
+func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] <root>\n", path.Base(os.Args[0]))
 		flag.PrintDefaults()
@@ -40,9 +40,7 @@ func init() {
 	flag.BoolVar(&tls, "tls", false, "Use TLS")
 	flag.StringVar(&tlscert, "tlscert", "server.crt", "server certificate")
 	flag.StringVar(&tlskey, "tlskey", "server.key", "server key")
-}
 
-func main() {
 	flag.Parse()
 
 	if debug {

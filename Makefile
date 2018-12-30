@@ -16,7 +16,13 @@ bench:
 	@go test -bench . ./...
 
 test:
-	@go test -cover -coverprofile=coverage.txt -covermode=atomic -race . ./...
+	@go test \
+		-race \
+		-cover \
+		-coverprofile=coverage.txt \
+		-covermode=atomic \
+		-coverpkg=./... \
+		./...
 
 clean:
 	@rm -rf httpfsd httpfsmount coverage.txt
