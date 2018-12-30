@@ -9,7 +9,7 @@ var (
 	Package = "httpfs"
 
 	// Version release version
-	Version = "0.0.1"
+	Version = "0.0.2"
 
 	// Commit will be overwritten automatically by the build system
 	Commit = "HEAD"
