@@ -1,0 +1,12 @@
+workspace:
+  base: /src
+
+pipeline:
+  build:
+    image: golang:latest
+    commands:
+      - make test
+
+  webhook:
+    image: plugins/webhook
+    urls: https://msgbus.mills.io/ci.mills.io
