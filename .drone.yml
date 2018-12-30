@@ -1,10 +1,19 @@
-pipeline:
-  build:
+kind: pipeline
+name: default
+
+steps:
+  - name: build
     image: golang:latest
     commands:
       - make test
 
-  notify:
+  - name: coverage
+    image: plugins/codecov
+    settings:
+      token:
+        from_secret: codecov-token
+
+  - name: notify
     image: plugins/webhook
     urls: https://msgbus.mills.io/ci.mills.io
     when:
