@@ -67,12 +67,14 @@ func main() {
 		fuse.VolumeName("HTTP FS"),
 		fuse.AllowOther(),
 
-		fuse.MaxReadahead(2^20),
+		fuse.MaxReadahead(128*1024),
+		fuse.MaxWrite(128*1024),
+		fuse.WritebackCache(),
 		fuse.NoAppleDouble(),
 		fuse.NoAppleXattr(),
+		fuse.AsyncRead(),
 	)
 	if err != nil {
-		log.Errorf("#1")
 		log.Fatal(err)
 	}
 	defer c.Close()
@@ -82,14 +84,12 @@ func main() {
 	filesys := fsapi.NewHTTPFS(url, tlsverify)
 
 	if err := srv.Serve(filesys); err != nil {
-		log.Errorf("#1")
 		log.Fatal(err)
 	}
 
 	// Check if the mount process has an error to report.
 	<-c.Ready
 	if err := c.MountError; err != nil {
-		log.Errorf("#1")
 		log.Fatal(err)
 	}
 }

@@ -1,3 +1,6 @@
-*~
+*~*
 dist
 *.bak
+httpfsd
+httpfsmount
+coverage.txt

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	//"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 
 	"bazil.org/fuse"
 )
@@ -29,20 +30,20 @@ func (h Handle) Close() error {
 
 // ReadAt ...
 func (h Handle) ReadAt(buf []byte, offset int64) (int, error) {
-	//log.Printf("handle.ReadAt(%s, %d)\n", h.path, offset)
+	log.Debugf("handle.ReadAt(%s, %d)\n", h.path, offset)
 
 	req := h.client.Get(h.path)
 	req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
 
 	r, err := h.client.client.Do(req)
 	if err != nil {
-		//log.Printf(" E: %s\n", err)
+		log.Debugf(" E: %s\n", err)
 		return 0, fuse.EIO
 	}
 	defer r.Body.Close()
 
 	if r.StatusCode != http.StatusPartialContent {
-		//log.Printf(" status=%d\n", r.StatusCode)
+		log.Debugf(" status=%d\n", r.StatusCode)
 		return 0, ErrorFromStatus(r.StatusCode)
 	}
 
@@ -58,12 +59,12 @@ func (h Handle) ReadAt(buf []byte, offset int64) (int, error) {
 
 // WriteAt ...
 func (h Handle) WriteAt(buf []byte, flags int, offset int64) (int, error) {
-	//log.Printf("handle.WriteAt(%s, %d, %d)\n", h.path, flags, offset)
+	log.Debugf("handle.WriteAt(%s, %d, %d)\n", h.path, flags, offset)
 
-	//log.Printf(" flags=%d\n", flags)
-	//log.Printf(" perm=%d\n", h.perm)
-	//log.Printf(" offset=%d\n", offset)
-	//log.Printf(" len(buf)=%d\n", len(buf))
+	log.Debugf(" flags=%d\n", flags)
+	log.Debugf(" perm=%d\n", h.perm)
+	log.Debugf(" offset=%d\n", offset)
+	log.Debugf(" len(buf)=%d\n", len(buf))
 
 	if h.f.created {
 		h.f.created = false
@@ -83,26 +84,26 @@ func (h Handle) WriteAt(buf []byte, flags int, offset int64) (int, error) {
 	r, err := h.client.client.Do(req)
 	defer r.Body.Close()
 	if err != nil {
-		//log.Printf(" E: %s\n", err)
+		log.Debugf(" E: %s\n", err)
 		return 0, fuse.EIO
 	}
 
 	if r.StatusCode == http.StatusOK {
 		return len(buf), nil
 	} else if r.StatusCode != http.StatusPartialContent {
-		//log.Printf(" status=%d\n", r.StatusCode)
+		log.Debugf(" status=%d\n", r.StatusCode)
 		return 0, ErrorFromStatus(r.StatusCode)
 	}
 
 	b, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		//log.Printf(" E: error reading body: %s\n", e)
+		log.Debugf(" E: error reading body: %s\n", e)
 		return 0, e
 	}
 
 	n, e := strconv.ParseInt(string(b), 10, 32)
 	if e != nil {
-		//log.Printf(" E: error parsing body: %s\n", e)
+		log.Debugf(" E: error parsing body: %s\n", e)
 		return 0, e
 	}
 

@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"golang.org/x/net/html"
 
@@ -108,7 +109,7 @@ func NewClient(url string, tlsverify bool) *Client {
 
 // NewRequest ...
 func (c Client) NewRequest(method, path string, body io.Reader) *http.Request {
-	//log.Printf("client.NewRequest(%s, %s)\n", method, path)
+	log.Debugf("client.NewRequest(%s, %s)\n", method, path)
 	req, _ := http.NewRequest(method, c.baseURL+path, body)
 	return req
 }
@@ -130,14 +131,14 @@ func (c Client) Put(path string, body io.Reader) *http.Request {
 
 // Stat ...
 func (c Client) Stat(path string) (os.FileInfo, error) {
-	//log.Printf("client.Stat(%s)\n", path)
+	log.Debugf("client.Stat(%s)\n", path)
 	r, e := c.client.Do(c.Head(path))
 	if e != nil {
-		//log.Printf(" E: %s\n", e)
+		log.Debugf(" E: %s\n", e)
 		return nil, e
 	}
 
-	//log.Printf(" status=%d\n", r.StatusCode)
+	log.Debugf(" status=%d\n", r.StatusCode)
 
 	if r.StatusCode != http.StatusOK {
 		return nil, ErrorFromStatus(r.StatusCode)
@@ -148,7 +149,7 @@ func (c Client) Stat(path string) (os.FileInfo, error) {
 	t, err := http.ParseTime(r.Header.Get("Last-Modified"))
 	if err != nil {
 		mtime = 0
-		//log.Printf(" E: error prasing Last-Modified: %s\n", err)
+		log.Debugf(" E: error prasing Last-Modified: %s\n", err)
 	} else {
 		mtime = t.Unix()
 	}
@@ -157,7 +158,7 @@ func (c Client) Stat(path string) (os.FileInfo, error) {
 	mode := uint32(SafeParseInt64(r.Header.Get("X-File-Mode")))
 	isdir := SafeParseBool(r.Header.Get("X-Is-Dir"))
 
-	//log.Printf(" size=%d mtime=%d mode=%d isdir=%b\n", size, mtime, mode, isdir,)
+	log.Debugf(" size=%d mtime=%d mode=%d isdir=%b\n", size, mtime, mode, isdir)
 
 	return fileStat{
 		name:  path,
@@ -219,7 +220,7 @@ func (c Client) Readdir(path string) ([]os.FileInfo, error) {
 	case "application/json":
 		data, _ := ioutil.ReadAll(r.Body)
 		if err := json.Unmarshal(data, &entries); nil != err {
-			//log.Printf("Error: %s\n", err)
+			log.Debugf("Error: %s\n", err)
 			return nil, err
 		}
 	default:
@@ -241,7 +242,7 @@ func (c Client) Readdir(path string) ([]os.FileInfo, error) {
 
 // Mkdir ...
 func (c Client) Mkdir(path string, perm os.FileMode) error {
-	//log.Printf("client.Mkdir(%q, %d)\n", path, perm)
+	log.Debugf("client.Mkdir(%q, %d)\n", path, perm)
 
 	req := c.NewRequest("MKDIR", path, nil)
 
@@ -251,7 +252,7 @@ func (c Client) Mkdir(path string, perm os.FileMode) error {
 
 	r, e := c.client.Do(req)
 	if e != nil {
-		//log.Printf(" E: %s\n", e)
+		log.Debugf(" E: %s\n", e)
 		return e
 	}
 
@@ -264,7 +265,7 @@ func (c Client) Mkdir(path string, perm os.FileMode) error {
 
 // Link ...
 func (c Client) Link(path, name string) error {
-	//log.Printf("client.Link(%s, %s)\n", path, name)
+	log.Debugf("client.Link(%s, %s)\n", path, name)
 
 	req := c.NewRequest("LINK", path, nil)
 
@@ -274,7 +275,7 @@ func (c Client) Link(path, name string) error {
 
 	r, e := c.client.Do(req)
 	if e != nil {
-		//log.Printf(" E: %s\n", e)
+		log.Debugf(" E: %s\n", e)
 		return e
 	}
 
@@ -287,7 +288,7 @@ func (c Client) Link(path, name string) error {
 
 // Symlink ...
 func (c Client) Symlink(target, name string) error {
-	//log.Printf("client.Symlink(%s, %s)\n", target, name)
+	log.Debugf("client.Symlink(%s, %s)\n", target, name)
 
 	req := c.NewRequest("LINK", target, nil)
 
@@ -298,7 +299,7 @@ func (c Client) Symlink(target, name string) error {
 
 	r, e := c.client.Do(req)
 	if e != nil {
-		//log.Printf(" E: %s\n", e)
+		log.Debugf(" E: %s\n", e)
 		return e
 	}
 
@@ -311,7 +312,7 @@ func (c Client) Symlink(target, name string) error {
 
 // Rename ...
 func (c Client) Rename(oldpath, newpath string) error {
-	//log.Printf("client.Rename(%s, %s)\n", oldpath, newpath)
+	log.Debugf("client.Rename(%s, %s)\n", oldpath, newpath)
 
 	req := c.NewRequest("RENAME", oldpath, nil)
 
@@ -321,7 +322,7 @@ func (c Client) Rename(oldpath, newpath string) error {
 
 	r, e := c.client.Do(req)
 	if e != nil {
-		//log.Printf(" E: %s\n", e)
+		log.Debugf(" E: %s\n", e)
 		return e
 	}
 
@@ -334,12 +335,12 @@ func (c Client) Rename(oldpath, newpath string) error {
 
 // Delete ...
 func (c Client) Delete(path string) error {
-	//log.Printf("client.Delete(%s)\n", path)
+	log.Debugf("client.Delete(%s)\n", path)
 
 	req := c.NewRequest("DELETE", path, nil)
 	r, e := c.client.Do(req)
 	if e != nil {
-		//log.Printf(" E: %s\n", e)
+		log.Debugf(" E: %s\n", e)
 		return e
 	}
 
@@ -352,7 +353,7 @@ func (c Client) Delete(path string) error {
 
 // Chmod ...
 func (c Client) Chmod(path string, mode os.FileMode) error {
-	//log.Printf("client.Chmod(%s, %d)\n", path, int(mode))
+	log.Debugf("client.Chmod(%s, %d)\n", path, int(mode))
 
 	req := c.NewRequest("CHMOD", path, nil)
 
@@ -362,7 +363,7 @@ func (c Client) Chmod(path string, mode os.FileMode) error {
 
 	r, e := c.client.Do(req)
 	if e != nil {
-		//log.Printf(" E: %s\n", e)
+		log.Debugf(" E: %s\n", e)
 		return e
 	}
 
@@ -375,7 +376,7 @@ func (c Client) Chmod(path string, mode os.FileMode) error {
 
 // Truncate ...
 func (c Client) Truncate(path string, size uint64) error {
-	//log.Printf("client.Truncate(%s, %d)\n", path, size)
+	log.Debugf("client.Truncate(%s, %d)\n", path, size)
 
 	req := c.NewRequest("TRUNCATE", path, nil)
 
@@ -385,7 +386,7 @@ func (c Client) Truncate(path string, size uint64) error {
 
 	r, e := c.client.Do(req)
 	if e != nil {
-		//log.Printf(" E: %s\n", e)
+		log.Debugf(" E: %s\n", e)
 		return e
 	}
 
