@@ -158,7 +158,7 @@ func (c Client) Stat(path string) (os.FileInfo, error) {
 	mode := uint32(SafeParseInt64(r.Header.Get("X-File-Mode")))
 	isdir := SafeParseBool(r.Header.Get("X-Is-Dir"))
 
-	log.Debugf(" size=%d mtime=%d mode=%d isdir=%b\n", size, mtime, mode, isdir)
+	log.Debugf(" size=%d mtime=%d mode=%d isdir=%t\n", size, mtime, mode, isdir)
 
 	return fileStat{
 		name:  path,
