@@ -1,6 +1,6 @@
 *~*
-dist
 *.bak
-httpfsd
-httpfsmount
-coverage.txt
+./dist
+./httpfsd
+./httpfsmount
+./coverage.txt
