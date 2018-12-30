@@ -10,13 +10,13 @@ install:
 	@go install ./...
 
 profile:
-	@go test -cpuprofile cpu.prof -memprofile mem.prof -v -bench .
+	@go test -cpuprofile cpu.prof -memprofile mem.prof -v -bench . ./...
 
 bench:
-	@go test -bench .
+	@go test -bench . ./...
 
 test:
-	@go test -cover -coverprofile=coverage.txt -covermode=atomic -race .
+	@go test -cover -coverprofile=coverage.txt -covermode=atomic -race . ./...
 
 clean:
 	@rm -rf httpfsd httpfsmount coverage.txt
