@@ -68,7 +68,6 @@ func main() {
 		fuse.AllowOther(),
 
 		fuse.MaxReadahead(128*1024),
-		fuse.MaxWrite(128*1024),
 		fuse.WritebackCache(),
 		fuse.NoAppleDouble(),
 		fuse.NoAppleXattr(),
