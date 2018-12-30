@@ -17,4 +17,6 @@ steps:
     image: plugins/webhook
     urls: https://msgbus.mills.io/ci.mills.io
     when:
-      status: [ success, changed, failure ]
+      status:
+        - success
+        - failure
